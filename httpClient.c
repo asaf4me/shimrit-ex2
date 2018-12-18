@@ -30,7 +30,10 @@ char **parsingUrl(const int argc, const char **argv)
             strcpy(parser[index], element);
             parser[index][strlen(element)] = '\0';
         }
-        return parser;
+        if(validation(parser,argc) == true)
+            return parser;
+        else
+            freeHttp(parser,argc);
     }
     return NULL;
 }
@@ -45,4 +48,14 @@ void freeHttp(char **httpReq, int argc)
             free(httpReq[i]);
     }
     free(httpReq);
+}
+
+bool validation(char **httpReq ,int argc)
+{
+    for(int i = 0; i < argc ; i ++)
+    {
+
+    }
+
+    return false;
 }

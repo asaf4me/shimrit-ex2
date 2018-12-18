@@ -18,6 +18,6 @@ If the function identify that the parsing is NULL it will return nothing, else, 
 void freeHttp(char **httpReq,int argc);
 
 /*Boolean function to identify whatever the user input if fit to the program or not, a true will return in case of right input, otherwise false*/
-bool validation(char **httpReq);
+bool validation(char **httpReq,int argc);
 
 #endif
