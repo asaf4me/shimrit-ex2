@@ -10,16 +10,12 @@
 void printParser(char **httpReq, int argc)
 {
     for (int i = 0; i < argc - 1; i++)
-    {
         printf("%s ", httpReq[i]);
-    }
-
     printf("\n");
 }
 
 int main(int argc, char const *argv[])
 {
-
     if (argc == 1)
     {
         error_case_handler("red", "Input case error: not enogh argument, example:\n");
