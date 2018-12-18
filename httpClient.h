@@ -2,11 +2,7 @@
 #define HTTPCLIENT_H
 
 /*DEFINES*/
-typedef enum
-{
-    false,
-    true
-} bool;
+typedef enum {false,true} bool;
 #define ERROR -1;
 
 /*Void function to handle diffrent type of errors, the motivation for this function is to give more visuality way
