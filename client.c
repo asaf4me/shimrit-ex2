@@ -14,6 +14,7 @@ typedef enum
 
 typedef struct request
 {
+    char *url;
     char *method;
     char *hostName;
     char *port;
@@ -31,6 +32,7 @@ Request *createRequest()
         printf("Memory allocation error, return null");
         return NULL;
     }
+    request->url = NULL;
     request->arguments = NULL;
     request->method = NULL;
     request->body = NULL;
@@ -43,18 +45,14 @@ Request *createRequest()
 
 void freeRequest(Request *request)
 {
+    if (request->url != NULL)
+        free(request->url);
     if (request->arguments != NULL)
         free(request->arguments);
     if (request->method != NULL)
         free(request->method);
     if (request->body != NULL)
         free(request->body);
-    if (request->hostName != NULL)
-        free(request->hostName);
-    if (request->port != NULL)
-        free(request->port);
-    if (request->path != NULL)
-        free(request->path);
     free(request);
 }
 
@@ -107,12 +105,31 @@ int parseBody(char *body, Request *request)
 
 int parseUrl(char *url, Request *request)
 {
-    char *begin = strchr(url, '/'), *end = strchr(begin, ':');
-    request->hostName = (char *)malloc(strlen(begin) * sizeof(char));
-    if (end != NULL)
+    request->url = (char *)malloc(strlen(url) * sizeof(char) + 1);
+    if (request->url == NULL)
     {
-        strncpy(request->hostName, begin + 2, end - begin - 2);
-        printf("host name is: %s\n", request->hostName);
+        printf("Memory allocation error, return -1");
+        return ERROR;
+    }
+    strcpy(request->url, url);
+    request->url[strlen(url)] = '\0';
+    char *ptr = strchr(url, '/') + 2;
+    request->hostName = ptr;
+    ptr = strchr(ptr, ':');
+    if (ptr != NULL)
+    {
+        *ptr = '\0';
+        request->port = ++ptr;
+    }
+    else
+    {
+        ptr = request->hostName;
+    }
+    ptr = strchr(ptr, '/');
+    if (ptr != NULL)
+    {
+        *ptr = '\0';
+        request->path = ++ptr;
     }
     return !ERROR;
 }
