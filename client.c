@@ -55,23 +55,11 @@ void freeRequest(Request *request)
 void message(char *color, char *msg)
 {
     if (strcmp(color, "red") == 0)
-    {
-        printf("\033[0;31m");
-        printf("Usage: %s", msg);
-        printf("\033[0m");
-    }
+        printf("\033[0;31mUsage: %s\033[0m", msg);
     else if (strcmp(color, "green") == 0)
-    {
-        printf("\033[0;32m");
-        printf("%s", msg);
-        printf("\033[0m");
-    }
+        printf("\033[0;32m%s\033[0m", msg);
     else if (strcmp(color, "blue") == 0)
-    {
-        printf("\033[0;34m");
-        printf("%s", msg);
-        printf("\033[0m");
-    }
+        printf("\033[0;34m%s\033[0m", msg);
 }
 
 int parseArguments(char *argv, Request *request)
@@ -97,7 +85,7 @@ int parseUrl(char *url, Request *request)
     request->url = (char *)malloc(strlen(url) * sizeof(char) + 1);
     if (request->url == NULL)
     {
-        printf("Memory allocation error, return -1");
+        printf("Memory allocation error, return ERROR[-1]");
         return ERROR;
     }
     strcpy(request->url, url);
