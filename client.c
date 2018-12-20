@@ -92,7 +92,7 @@ int arguments(char *argv, Req *req)
 
 int parseBody(char *body, Req *req)
 {
-    if (strcmp(body, "-r") == 0)
+    if (strcmp(body, "-r") == 0 || startsWith(body,"http://") == true)
     {
         message("red", "invalid body argument\n");
         printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
