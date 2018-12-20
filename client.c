@@ -34,7 +34,7 @@ Request *createRequest()
     }
     request->url = NULL;
     request->arguments = NULL;
-    request->method = NULL;
+    request->method = "GET";
     request->body = NULL;
     request->hostName = NULL;
     request->path = NULL;
@@ -49,10 +49,6 @@ void freeRequest(Request *request)
         free(request->url);
     if (request->arguments != NULL)
         free(request->arguments);
-    if (request->method != NULL)
-        free(request->method);
-    if (request->body != NULL)
-        free(request->body);
     free(request);
 }
 
@@ -91,14 +87,7 @@ int parseBody(char *body, Request *request)
         printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
         return ERROR;
     }
-    request->body = (char *)malloc(strlen(body) * sizeof(char) + 1);
-    if (request == NULL)
-    {
-        printf("Memory allocation error, return null");
-        return ERROR;
-    }
-    strcpy(request->body, body);
-    request->body[strlen(body)] = '\0';
+    request->body = body;
     request->contentLength = strlen(body);
     return !ERROR;
 }
@@ -167,18 +156,9 @@ int main(int argc, char *argv[])
                 message("red", "body parse failed\n");
                 freeRequest(request);
             }
-            request->method = (char *)malloc(strlen("GET") * sizeof(char) + 1);
-            strcpy(request->method, "GET");
-            request->method[strlen("GET")] = '\0';
+            request->method = "POST";
         }
     }
-    if (request->method == NULL)
-    {
-        request->method = (char *)malloc(strlen("POST") * sizeof(char) + 1);
-        strcpy(request->method, "POST");
-        request->method[strlen("POST")] = '\0';
-    }
-
     freeRequest(request);
     return EXIT_SUCCESS;
 }
