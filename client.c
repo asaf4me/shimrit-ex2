@@ -20,6 +20,7 @@ typedef struct req
     char *path;
     char *body;
     char *arguments;
+    char *contentLength;
 } Req;
 
 Req *createReq()
@@ -36,6 +37,7 @@ Req *createReq()
     req->hostName = NULL;
     req->path = NULL;
     req->port = NULL;
+    req->contentLength = NULL;
     return req;
 }
 
@@ -53,6 +55,8 @@ void freeReq(Req *req)
         free(req->port);
     if (req->path != NULL)
         free(req->path);
+    if (req->contentLength != NULL)
+        free(req->contentLength);
     free(req);
 }
 
@@ -92,13 +96,21 @@ int arguments(char *argv, Req *req)
 
 int parseBody(char *body, Req *req)
 {
-    if (strcmp(body, "-r") == 0 || startsWith(body,"http://") == true)
+    if (strcmp(body, "-r") == 0 || startsWith(body, "http://") == true)
     {
         message("red", "invalid body argument\n");
         printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
         return ERROR;
     }
-    return ERROR;
+    req->body = (char *)malloc(strlen(body) * sizeof(char) + 1);
+    if (req == NULL)
+    {
+        printf("Memory allocation error, return null");
+        return ERROR;
+    }
+    strcpy(req->body,body);
+    req->body[strlen(body)] = '\0';
+    return !ERROR;
 }
 
 int parseUrl(char *url, Req *req)
