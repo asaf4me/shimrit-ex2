@@ -20,7 +20,7 @@ typedef struct req
     char *path;
     char *body;
     char *arguments;
-    char *contentLength;
+    int contentLength;
 } Req;
 
 Req *createReq()
@@ -37,7 +37,7 @@ Req *createReq()
     req->hostName = NULL;
     req->path = NULL;
     req->port = NULL;
-    req->contentLength = NULL;
+    req->contentLength = 0;
     return req;
 }
 
@@ -55,8 +55,6 @@ void freeReq(Req *req)
         free(req->port);
     if (req->path != NULL)
         free(req->path);
-    if (req->contentLength != NULL)
-        free(req->contentLength);
     free(req);
 }
 
@@ -110,13 +108,14 @@ int parseBody(char *body, Req *req)
     }
     strcpy(req->body,body);
     req->body[strlen(body)] = '\0';
+    req->contentLength = strlen(body);
     return !ERROR;
 }
 
 int parseUrl(char *url, Req *req)
 {
-
-    return ERROR;
+    
+    return !ERROR;
 }
 
 int main(int argc, char *argv[])
