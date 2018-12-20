@@ -12,7 +12,7 @@ typedef enum
 
 #define ERROR -1
 
-typedef struct req
+typedef struct request
 {
     char *method;
     char *hostName;
@@ -21,41 +21,41 @@ typedef struct req
     char *body;
     char *arguments;
     int contentLength;
-} Req;
+} Request;
 
-Req *createReq()
+Request *createRequest()
 {
-    Req *req = (Req *)malloc(sizeof(Req));
-    if (req == NULL)
+    Request *request = (Request *)malloc(sizeof(Request));
+    if (request == NULL)
     {
         printf("Memory allocation error, return null");
         return NULL;
     }
-    req->arguments = NULL;
-    req->method = NULL;
-    req->body = NULL;
-    req->hostName = NULL;
-    req->path = NULL;
-    req->port = NULL;
-    req->contentLength = 0;
-    return req;
+    request->arguments = NULL;
+    request->method = NULL;
+    request->body = NULL;
+    request->hostName = NULL;
+    request->path = NULL;
+    request->port = NULL;
+    request->contentLength = 0;
+    return request;
 }
 
-void freeReq(Req *req)
+void freeRequest(Request *request)
 {
-    if (req->arguments != NULL)
-        free(req->arguments);
-    if (req->method != NULL)
-        free(req->method);
-    if (req->body != NULL)
-        free(req->body);
-    if (req->hostName != NULL)
-        free(req->hostName);
-    if (req->port != NULL)
-        free(req->port);
-    if (req->path != NULL)
-        free(req->path);
-    free(req);
+    if (request->arguments != NULL)
+        free(request->arguments);
+    if (request->method != NULL)
+        free(request->method);
+    if (request->body != NULL)
+        free(request->body);
+    if (request->hostName != NULL)
+        free(request->hostName);
+    if (request->port != NULL)
+        free(request->port);
+    if (request->path != NULL)
+        free(request->path);
+    free(request);
 }
 
 void message(char *color, char *msg)
@@ -80,12 +80,12 @@ void message(char *color, char *msg)
     }
 }
 
-int parseArguments(char *argv, Req *req)
+int parseArguments(char *argv, Request *request)
 {
     return ERROR;
 }
 
-int parseBody(char *body, Req *req)
+int parseBody(char *body, Request *request)
 {
     if (strcmp(body, "-r") == 0 || strstr(body, "http:") != NULL)
     {
@@ -93,27 +93,27 @@ int parseBody(char *body, Req *req)
         printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
         return ERROR;
     }
-    req->body = (char *)malloc(strlen(body) * sizeof(char) + 1);
-    if (req == NULL)
+    request->body = (char *)malloc(strlen(body) * sizeof(char) + 1);
+    if (request == NULL)
     {
         printf("Memory allocation error, return null");
         return ERROR;
     }
-    strcpy(req->body,body);
-    req->body[strlen(body)] = '\0';
-    req->contentLength = strlen(body);
+    strcpy(request->body, body);
+    request->body[strlen(body)] = '\0';
+    request->contentLength = strlen(body);
     return !ERROR;
 }
 
-int parseUrl(char *url, Req *req)
+int parseUrl(char *url, Request *request)
 {
-    char *begin = strchr(url,'/') , *end = strchr(begin,':');
-    printf("begin is: %s\n", begin);
-    if(end != NULL)
+    char *begin = strchr(url, '/'), *end = strchr(begin, ':');
+    request->hostName = (char *)malloc(strlen(begin) * sizeof(char));
+    if (end != NULL)
     {
-        printf("end is: %s\n", end);    
+        strncpy(request->hostName, begin + 2, end - begin - 2);
+        printf("host name is: %s\n", request->hostName);
     }
-    
     return !ERROR;
 }
 
@@ -125,15 +125,15 @@ int main(int argc, char *argv[])
         printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
         return EXIT_FAILURE;
     }
-    Req *req = createReq();
+    Request *request = createRequest();
     for (int i = 1; i < argc; i++)
     {
         if (strstr(argv[i], "http://") != NULL)
         {
-            if (parseUrl(argv[i], req) == ERROR)
+            if (parseUrl(argv[i], request) == ERROR)
             {
                 message("red", "url parse failed\n");
-                freeReq(req);
+                freeRequest(request);
             }
         }
         if (strcmp(argv[i], "-p") == 0)
@@ -142,26 +142,26 @@ int main(int argc, char *argv[])
             {
                 message("red", "invalid body argument\n");
                 printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
-                freeReq(req);
+                freeRequest(request);
                 return EXIT_FAILURE;
             }
-            if (parseBody(argv[i + 1], req) == ERROR)
+            if (parseBody(argv[i + 1], request) == ERROR)
             {
                 message("red", "body parse failed\n");
-                freeReq(req);
+                freeRequest(request);
             }
-            req->method = (char *)malloc(strlen("GET") * sizeof(char) + 1);
-            strcpy(req->method, "GET");
-            req->method[strlen("GET")] = '\0';
+            request->method = (char *)malloc(strlen("GET") * sizeof(char) + 1);
+            strcpy(request->method, "GET");
+            request->method[strlen("GET")] = '\0';
         }
     }
-    if (req->method == NULL)
+    if (request->method == NULL)
     {
-        req->method = (char *)malloc(strlen("POST") * sizeof(char) + 1);
-        strcpy(req->method, "POST");
-        req->method[strlen("POST")] = '\0';
+        request->method = (char *)malloc(strlen("POST") * sizeof(char) + 1);
+        strcpy(request->method, "POST");
+        request->method[strlen("POST")] = '\0';
     }
 
-    freeReq(req);
+    freeRequest(request);
     return EXIT_SUCCESS;
 }
