@@ -58,13 +58,6 @@ void freeReq(Req *req)
     free(req);
 }
 
-bool startsWith(const char *pre, const char *str)
-{
-    size_t lenpre = strlen(pre),
-           lenstr = strlen(str);
-    return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
-}
-
 void message(char *color, char *msg)
 {
     if (strcmp(color, "red") == 0)
@@ -94,7 +87,7 @@ int parseArguments(char *argv, Req *req)
 
 int parseBody(char *body, Req *req)
 {
-    if (strcmp(body, "-r") == 0 || startsWith(body, "http://") == true)
+    if (strcmp(body, "-r") == 0 || strstr(body, "http:") != NULL)
     {
         message("red", "invalid body argument\n");
         printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
@@ -114,7 +107,13 @@ int parseBody(char *body, Req *req)
 
 int parseUrl(char *url, Req *req)
 {
-
+    char *begin = strchr(url,'/') , *end = strchr(begin,':');
+    printf("begin is: %s\n", begin);
+    if(end != NULL)
+    {
+        printf("end is: %s\n", end);    
+    }
+    
     return !ERROR;
 }
 
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
     Req *req = createReq();
     for (int i = 1; i < argc; i++)
     {
-        if (startsWith(argv[i], "http://"))
+        if (strstr(argv[i], "http://") != NULL)
         {
             if (parseUrl(argv[i], req) == ERROR)
             {
