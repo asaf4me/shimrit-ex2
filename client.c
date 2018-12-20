@@ -87,7 +87,7 @@ void message(char *color, char *msg)
     }
 }
 
-int arguments(char *argv, Req *req)
+int parseArguments(char *argv, Req *req)
 {
     return ERROR;
 }
@@ -114,7 +114,7 @@ int parseBody(char *body, Req *req)
 
 int parseUrl(char *url, Req *req)
 {
-    
+
     return !ERROR;
 }
 
