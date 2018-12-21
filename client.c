@@ -213,7 +213,11 @@ int main(int argc, char *argv[])
         if (strstr(argv[i], "http://") != NULL)
         {
             if (parseUrl(argv[i], request) == ERROR)
+            {
                 message("red", "url parse failed\n");
+                freeRequest(request);
+                return EXIT_FAILURE;
+            }
         }
         if (strcmp(argv[i], "-p") == 0)
         {
@@ -227,6 +231,8 @@ int main(int argc, char *argv[])
             if (parseBody(argv[i + 1], request) == ERROR)
             {
                 message("red", "body parse failed\n");
+                freeRequest(request);
+                return EXIT_FAILURE;
             }
         }
         if (strcmp(argv[i], "-r") == 0)
