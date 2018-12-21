@@ -62,8 +62,43 @@ void message(char *color, char *msg)
         printf("\033[0;34m%s\033[0m", msg);
 }
 
-int parseArguments(char *argv, Request *request)
+bool validation(const char *from, char *ptr)
 {
+    if (strcmp(from, "parseArguments") == 0)
+    {
+        if (strstr(ptr, "http:") != NULL || strcmp(ptr, "-p") == 0 || strchr(ptr, '=') == NULL)
+            return false;
+        return true;
+    }
+
+    return false;
+}
+
+int parseArguments(char **args, Request *request, int argc, int index)
+{
+    int numOfArguments = atoi(*args);
+    if (numOfArguments == 0 || strstr(*args, "http:") != NULL || strcmp(*args, "-p") == 0 || (numOfArguments + index) >= argc - 1)
+    {
+        {
+            printf("Not enough arguments... return error\n");
+            return ERROR;
+        }
+    }
+    int counter = 0;
+    for (int i = 0; i < numOfArguments; i++)
+    {
+        ++args;
+        if (args != NULL)
+        {
+            if (validation("parseArguments", *args) == true)
+            {
+                printf("argument is %s\n", *args);
+                counter++;
+            }    
+        }
+    }
+    if(counter == numOfArguments)
+        return !ERROR;
     return ERROR;
 }
 
@@ -127,7 +162,6 @@ int main(int argc, char *argv[])
             if (parseUrl(argv[i], request) == ERROR)
             {
                 message("red", "url parse failed\n");
-                freeRequest(request);
             }
         }
         if (strcmp(argv[i], "-p") == 0)
@@ -142,9 +176,22 @@ int main(int argc, char *argv[])
             if (parseBody(argv[i + 1], request) == ERROR)
             {
                 message("red", "body parse failed\n");
-                freeRequest(request);
             }
             request->method = "POST";
+        }
+        if (strcmp(argv[i], "-r") == 0)
+        {
+            if (i == argc - 1)
+            {
+                message("red", "invalid body argument\n");
+                printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
+                freeRequest(request);
+                return EXIT_FAILURE;
+            }
+            if (parseArguments(&argv[i + 1], request, argc, i) == ERROR)
+            {
+                message("red", "arguments parse failed\n");
+            }
         }
     }
     freeRequest(request);
