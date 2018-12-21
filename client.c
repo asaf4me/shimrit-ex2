@@ -20,7 +20,7 @@ typedef struct request
     char *port;
     char *path;
     char *body;
-    char *arguments;
+    char **arguments;
     int contentLength;
 } Request;
 
@@ -62,16 +62,11 @@ void message(char *color, char *msg)
         printf("\033[0;34m%s\033[0m", msg);
 }
 
-bool validation(const char *from, char *ptr)
+bool validation(char *ptr)
 {
-    if (strcmp(from, "parseArguments") == 0)
-    {
-        if (strstr(ptr, "http:") != NULL || strcmp(ptr, "-p") == 0 || strchr(ptr, '=') == NULL)
-            return false;
-        return true;
-    }
-
-    return false;
+    if (strstr(ptr, "http:") != NULL || strcmp(ptr, "-p") == 0 || strchr(ptr, '=') == NULL)
+        return false;
+    return true;
 }
 
 int parseArguments(char **args, Request *request, int argc, int index)
@@ -79,25 +74,24 @@ int parseArguments(char **args, Request *request, int argc, int index)
     int numOfArguments = atoi(*args);
     if (numOfArguments == 0 || strstr(*args, "http:") != NULL || strcmp(*args, "-p") == 0 || (numOfArguments + index) >= argc - 1)
     {
-        {
-            printf("Not enough arguments... return error\n");
-            return ERROR;
-        }
+        printf("Not enough arguments... return error\n");
+        return ERROR;
     }
     int counter = 0;
+    request->arguments = (char **)malloc(numOfArguments * sizeof(char *));
     for (int i = 0; i < numOfArguments; i++)
     {
         ++args;
         if (args != NULL)
         {
-            if (validation("parseArguments", *args) == true)
+            if (validation(*args) == true)
             {
-                printf("argument is %s\n", *args);
+                request->arguments[i] = *args;
                 counter++;
-            }    
+            }
         }
     }
-    if(counter == numOfArguments)
+    if (counter == numOfArguments)
         return !ERROR;
     return ERROR;
 }
@@ -144,6 +138,17 @@ int parseUrl(char *url, Request *request)
         request->path = ++ptr;
     }
     return !ERROR;
+}
+
+char *stringify(Request *request)
+{
+    if (request->url == NULL)
+    {
+        message("red", "Invalid url\n");
+        printf("Example for correct input:\n./client http://www.google.com\n");
+        return NULL;
+    }
+    return NULL;
 }
 
 int main(int argc, char *argv[])
@@ -194,6 +199,13 @@ int main(int argc, char *argv[])
             }
         }
     }
+    char *httpRequest = stringify(request);
+    if (httpRequest == NULL)
+    {
+        freeRequest(request);
+        return EXIT_FAILURE;
+    }
+
     freeRequest(request);
     return EXIT_SUCCESS;
 }
