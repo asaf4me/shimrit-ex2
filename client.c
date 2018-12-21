@@ -11,6 +11,8 @@ typedef enum
 } bool;
 
 #define ERROR -1
+#define GETSIZE 6
+#define POSTSIZE 7
 
 typedef struct request
 {
@@ -22,6 +24,7 @@ typedef struct request
     char *body;
     char **arguments;
     int contentLength;
+    int argumentNum;
 } Request;
 
 Request *createRequest()
@@ -34,12 +37,12 @@ Request *createRequest()
     }
     request->url = NULL;
     request->arguments = NULL;
-    request->method = "GET";
     request->body = NULL;
     request->hostName = NULL;
     request->path = NULL;
     request->port = NULL;
     request->contentLength = 0;
+    request->argumentNum = 0;
     return request;
 }
 
@@ -77,6 +80,7 @@ int parseArguments(char **args, Request *request, int argc, int index)
         printf("Not enough arguments... return error\n");
         return ERROR;
     }
+    request->argumentNum = numOfArguments;
     int counter = 0;
     request->arguments = (char **)malloc(numOfArguments * sizeof(char *));
     for (int i = 0; i < numOfArguments; i++)
@@ -89,15 +93,21 @@ int parseArguments(char **args, Request *request, int argc, int index)
                 request->arguments[i] = *args;
                 counter++;
             }
+            else
+                request->arguments[i] = NULL;
         }
     }
-    if (counter == numOfArguments)
-        return !ERROR;
-    return ERROR;
+    if (counter != numOfArguments)
+    {
+        free(request->arguments);
+        return ERROR;
+    }
+    return !ERROR;
 }
 
 int parseBody(char *body, Request *request)
 {
+
     if (strcmp(body, "-r") == 0 || strstr(body, "http:") != NULL)
     {
         message("red", "invalid body argument\n");
@@ -140,15 +150,54 @@ int parseUrl(char *url, Request *request)
     return !ERROR;
 }
 
-char *stringify(Request *request)
+char *http(Request *request)
 {
+    char *posix = NULL;
+    int length = 0;
     if (request->url == NULL)
     {
         message("red", "Invalid url\n");
         printf("Example for correct input:\n./client http://www.google.com\n");
         return NULL;
     }
-    return NULL;
+    if (request->body != NULL)
+    {
+        length = POSTSIZE;
+        posix = (char *)malloc(length * sizeof(char));
+        strcpy(posix, "POST /");
+    }
+    else
+    {
+        length = GETSIZE;
+        posix = (char *)malloc(length * sizeof(char));
+        strcpy(posix, "GET /");
+    }
+    if (request->path != NULL)
+    {
+        length += strlen(request->path);
+        posix = (char *)realloc(posix, length * sizeof(char));
+        strcat(posix, request->path);
+    }
+    if (request->arguments != NULL)
+    {
+        length += strlen("?");
+        posix = (char *)realloc(posix, length * sizeof(char));
+        strcat(posix, "?");
+        for (int i = 0; i < request->argumentNum; i++)
+        {
+            length += strlen(request->arguments[i]) + 1;
+            posix = (char *)realloc(posix, length * sizeof(char));
+            strcat(posix, request->arguments[i]);
+            if (i != request->argumentNum - 1)
+                strcat(posix, "&");
+        }
+    }
+    length += strlen(" HTTP/1.0\r\nHOST: ") + strlen(request->url) + strlen("\r\n");
+    posix = (char *)realloc(posix, length * sizeof(char));
+    strcat(posix, " HTTP/1.0\r\nHOST: ");
+    strcat(posix, request->url);
+    strcat(posix, "\r\n");
+    return posix;
 }
 
 int main(int argc, char *argv[])
@@ -165,9 +214,7 @@ int main(int argc, char *argv[])
         if (strstr(argv[i], "http://") != NULL)
         {
             if (parseUrl(argv[i], request) == ERROR)
-            {
                 message("red", "url parse failed\n");
-            }
         }
         if (strcmp(argv[i], "-p") == 0)
         {
@@ -182,7 +229,6 @@ int main(int argc, char *argv[])
             {
                 message("red", "body parse failed\n");
             }
-            request->method = "POST";
         }
         if (strcmp(argv[i], "-r") == 0)
         {
@@ -199,13 +245,12 @@ int main(int argc, char *argv[])
             }
         }
     }
-    char *httpRequest = stringify(request);
-    if (httpRequest == NULL)
+    char *posix = http(request);
+    if (posix != NULL)
     {
-        freeRequest(request);
-        return EXIT_FAILURE;
+        printf("%s\n", posix);
     }
-
+    free(posix);
     freeRequest(request);
     return EXIT_SUCCESS;
 }
