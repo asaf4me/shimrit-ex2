@@ -94,8 +94,6 @@ int parseArguments(char **args, Request *request, int argc, int index)
                 counter++;
                 request->length += strlen(*args);
             }
-            else
-                request->arguments[i] = NULL;
         }
     }
     if (counter != numOfArguments)
@@ -190,11 +188,13 @@ char *http(Request *request)
     if (request->contentLength > 0)
     {
         strcat(posix, "\r\nContent-length:");
+        char buffer[request->contentLength];
+        sprintf(buffer, "%d", request->contentLength);
+        strcat(posix, buffer);
     }
-    else
-    {
-        strcat(posix, "\r\nContent-length:");
-    }
+    strcat(posix, "\r\n\r\n");
+    if (request->body != NULL)
+        strcat(posix, request->body);
 
     return posix;
 }
@@ -241,6 +241,8 @@ int main(int argc, char *argv[])
             if (parseArguments(&argv[i + 1], request, argc, i) == ERROR)
             {
                 message("red", "arguments parse failed\n");
+                freeRequest(request);
+                return EXIT_FAILURE;
             }
         }
     }
