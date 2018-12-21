@@ -11,8 +11,6 @@ typedef enum
 } bool;
 
 #define ERROR -1
-#define GETSIZE 6
-#define POSTSIZE 7
 
 typedef struct request
 {
@@ -25,6 +23,7 @@ typedef struct request
     char **arguments;
     int contentLength;
     int argumentNum;
+    int length;
 } Request;
 
 Request *createRequest()
@@ -43,6 +42,7 @@ Request *createRequest()
     request->port = NULL;
     request->contentLength = 0;
     request->argumentNum = 0;
+    request->length = 50;
     return request;
 }
 
@@ -92,6 +92,7 @@ int parseArguments(char **args, Request *request, int argc, int index)
             {
                 request->arguments[i] = *args;
                 counter++;
+                request->length += strlen(*args);
             }
             else
                 request->arguments[i] = NULL;
@@ -116,6 +117,7 @@ int parseBody(char *body, Request *request)
     }
     request->body = body;
     request->contentLength = strlen(body);
+    request->length += request->contentLength;
     return !ERROR;
 }
 
@@ -129,6 +131,7 @@ int parseUrl(char *url, Request *request)
     }
     strcpy(request->url, url);
     request->url[strlen(url)] = '\0';
+    request->length += strlen(request->url);
     char *ptr = strchr(url, '/') + 2;
     request->hostName = ptr;
     ptr = strchr(ptr, ':');
@@ -136,6 +139,7 @@ int parseUrl(char *url, Request *request)
     {
         *ptr = '\0';
         request->port = ++ptr;
+        request->length += strlen(request->port);
     }
     else
     {
@@ -146,57 +150,52 @@ int parseUrl(char *url, Request *request)
     {
         *ptr = '\0';
         request->path = ++ptr;
+        request->length += strlen(request->path);
     }
     return !ERROR;
 }
 
 char *http(Request *request)
 {
-    char *posix = NULL;
-    int length = 0;
     if (request->url == NULL)
     {
         message("red", "Invalid url\n");
         printf("Example for correct input:\n./client http://www.google.com\n");
         return NULL;
     }
+    char *posix = (char *)malloc(request->length * sizeof(char));
+    if (posix == NULL)
+    {
+        printf("Memory allocation error, return ERROR[-1]");
+        return NULL;
+    }
     if (request->body != NULL)
-    {
-        length = POSTSIZE;
-        posix = (char *)malloc(length * sizeof(char));
-        strcpy(posix, "POST /");
-    }
+        strcat(posix, "POST /");
     else
-    {
-        length = GETSIZE;
-        posix = (char *)malloc(length * sizeof(char));
-        strcpy(posix, "GET /");
-    }
+        strcat(posix, "GET /");
     if (request->path != NULL)
-    {
-        length += strlen(request->path);
-        posix = (char *)realloc(posix, length * sizeof(char));
         strcat(posix, request->path);
-    }
     if (request->arguments != NULL)
     {
-        length += strlen("?");
-        posix = (char *)realloc(posix, length * sizeof(char));
         strcat(posix, "?");
         for (int i = 0; i < request->argumentNum; i++)
         {
-            length += strlen(request->arguments[i]) + 1;
-            posix = (char *)realloc(posix, length * sizeof(char));
             strcat(posix, request->arguments[i]);
             if (i != request->argumentNum - 1)
                 strcat(posix, "&");
         }
     }
-    length += strlen(" HTTP/1.0\r\nHOST: ") + strlen(request->url) + strlen("\r\n");
-    posix = (char *)realloc(posix, length * sizeof(char));
-    strcat(posix, " HTTP/1.0\r\nHOST: ");
-    strcat(posix, request->url);
-    strcat(posix, "\r\n");
+    strcat(posix, " HTTP/1.0\r\nHost: ");
+    strcat(posix, request->hostName);
+    if (request->contentLength > 0)
+    {
+        strcat(posix, "\r\nContent-length:");
+    }
+    else
+    {
+        strcat(posix, "\r\nContent-length:");
+    }
+
     return posix;
 }
 
