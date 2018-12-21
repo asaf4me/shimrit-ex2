@@ -255,6 +255,7 @@ int main(int argc, char *argv[])
     char *posix = http(request);
     if (posix != NULL)
     {
+        message("green", "Parse success, sending this message to the server:\n");
         printf("%s\n", posix);
     }
     free(posix);
