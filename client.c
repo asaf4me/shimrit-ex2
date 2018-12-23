@@ -11,6 +11,7 @@ typedef enum
 } bool;
 
 #define ERROR -1
+#define BUFFER 50
 
 typedef struct request
 {
@@ -42,7 +43,7 @@ Request *createRequest()
     request->port = NULL;
     request->contentLength = 0;
     request->argumentNum = 0;
-    request->length = 50;
+    request->length = BUFFER;
     return request;
 }
 
@@ -83,6 +84,11 @@ int parseArguments(char **args, Request *request, int argc, int index)
     request->argumentNum = numOfArguments;
     int counter = 0;
     request->arguments = (char **)malloc(numOfArguments * sizeof(char *));
+    if (request->arguments == NULL)
+    {
+        printf("Memory allocation error, return ERROR[-1]");
+        return ERROR;
+    }
     for (int i = 0; i < numOfArguments; i++)
     {
         ++args;
@@ -92,8 +98,12 @@ int parseArguments(char **args, Request *request, int argc, int index)
             {
                 request->arguments[i] = *args;
                 counter++;
-                request->length += strlen(*args);
+                request->length += strlen(*args) + 1;
             }
+        }
+        else
+        {
+            request->arguments[i] = NULL;
         }
     }
     if (counter != numOfArguments)
@@ -137,7 +147,7 @@ int parseUrl(char *url, Request *request)
     {
         *ptr = '\0';
         request->port = ++ptr;
-        request->length += strlen(request->port);
+        request->length += strlen(request->port) + 1;
     }
     else
     {
@@ -155,10 +165,8 @@ int parseUrl(char *url, Request *request)
 
 char *http(Request *request)
 {
-    if (request->url == NULL)
+    if(request->url == NULL)
     {
-        message("red", "Invalid url\n");
-        printf("Example for correct input:\n./client http://www.google.com\n");
         return NULL;
     }
     char *posix = (char *)malloc(request->length * sizeof(char));
@@ -178,13 +186,21 @@ char *http(Request *request)
         strcat(posix, "?");
         for (int i = 0; i < request->argumentNum; i++)
         {
-            strcat(posix, request->arguments[i]);
-            if (i != request->argumentNum - 1)
-                strcat(posix, "&");
+            if (request->arguments[i] != NULL)
+            {
+                strcat(posix, request->arguments[i]);
+                if (i != request->argumentNum - 1)
+                    strcat(posix, "&");
+            }
         }
     }
     strcat(posix, " HTTP/1.0\r\nHost: ");
     strcat(posix, request->hostName);
+    if(request->port != NULL)
+    {
+        strcat(posix, ":");
+        strcat(posix, request->port);
+    }
     if (request->contentLength > 0)
     {
         strcat(posix, "\r\nContent-length:");
@@ -195,7 +211,6 @@ char *http(Request *request)
     strcat(posix, "\r\n\r\n");
     if (request->body != NULL)
         strcat(posix, request->body);
-
     return posix;
 }
 
@@ -208,6 +223,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     Request *request = createRequest();
+    if (request == NULL)
+        return EXIT_FAILURE;
     for (int i = 1; i < argc; i++)
     {
         if (strstr(argv[i], "http://") != NULL)
@@ -257,8 +274,8 @@ int main(int argc, char *argv[])
     {
         message("green", "Parse success, sending this message to the server:\n");
         printf("%s\n", posix);
+        free(posix);
     }
-    free(posix);
     freeRequest(request);
     return EXIT_SUCCESS;
 }
