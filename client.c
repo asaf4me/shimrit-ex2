@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
 typedef enum
 {
@@ -12,6 +18,7 @@ typedef enum
 
 #define ERROR -1
 #define BUFFER 50
+#define BUFFER_SIZE 2048
 
 typedef struct request
 {
@@ -169,7 +176,7 @@ char *http(Request *request)
         return NULL;
     }
     char *posix = (char *)malloc(request->length * sizeof(char));
-    memset(posix,0,request->length);
+    memset(posix, 0, request->length);
     if (posix == NULL)
     {
         printf("Memory allocation error, return ERROR[-1]");
@@ -212,6 +219,37 @@ char *http(Request *request)
     if (request->body != NULL)
         strcat(posix, request->body);
     return posix;
+}
+
+int make_socket(Request *request)
+{
+    struct hostent *hp;
+    struct sockaddr_in addr;
+    int live = 1, sock;
+    if ((hp = gethostbyname(request->hostName)) == NULL)
+    {
+        perror("gethostbyname");
+        return ERROR;
+    }
+    memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
+    if (request->port != NULL)
+        addr.sin_port = htons(atoi(request->port));
+    else
+        addr.sin_port = htons(80);
+    addr.sin_family = AF_INET;
+    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&live, sizeof(int));
+    if (sock == -1)
+    {
+        perror("setsockopt");
+        return ERROR;
+    }
+    if (connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
+    {
+        perror("connect");
+        return ERROR;
+    }
+    return sock;
 }
 
 int main(int argc, char *argv[])
@@ -272,8 +310,25 @@ int main(int argc, char *argv[])
     char *posix = http(request);
     if (posix != NULL)
     {
+        int fd;
+        char buffer[BUFFER_SIZE];
         message("green", "Parse success, message about to send:\n");
-        printf("%s\n", posix);
+        printf("%s\n\n", posix);
+        if ((fd = make_socket(request)) == ERROR)
+        {
+            free(posix);
+            freeRequest(request);
+            return EXIT_FAILURE;
+        }
+        write(fd, posix, strlen(posix));
+        bzero(buffer, BUFFER_SIZE);
+        while (read(fd, buffer, BUFFER_SIZE - 1) != 0)
+        {
+            fprintf(stderr, "%s", buffer);
+            bzero(buffer, BUFFER_SIZE);
+        }
+        shutdown(fd, SHUT_RDWR);
+        close(fd);
         free(posix);
     }
     freeRequest(request);
