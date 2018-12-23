@@ -33,7 +33,7 @@ typedef struct request
     int length;
 } Request;
 
-Request *createRequest()
+Request *create_request()
 {
     Request *request = (Request *)malloc(sizeof(Request));
     if (request == NULL)
@@ -53,7 +53,7 @@ Request *createRequest()
     return request;
 }
 
-void freeRequest(Request *request)
+void free_request(Request *request)
 {
     if (request->url != NULL)
         free(request->url);
@@ -79,7 +79,7 @@ bool validation(char *ptr)
     return true;
 }
 
-int parseArguments(char **args, Request *request, int argc, int index)
+int parse_arguments(char **args, Request *request, int argc, int index)
 {
     int numOfArguments = atoi(*args);
     if (numOfArguments == 0 || strstr(*args, "http:") != NULL || strcmp(*args, "-p") == 0 || (numOfArguments + index) >= argc - 1)
@@ -120,7 +120,7 @@ int parseArguments(char **args, Request *request, int argc, int index)
     return !ERROR;
 }
 
-int parseBody(char *body, Request *request)
+int parse_body(char *body, Request *request)
 {
 
     if (strcmp(body, "-r") == 0 || strstr(body, "http:") != NULL)
@@ -135,7 +135,7 @@ int parseBody(char *body, Request *request)
     return !ERROR;
 }
 
-int parseUrl(char *url, Request *request)
+int parse_url(char *url, Request *request)
 {
     request->url = (char *)malloc(strlen(url) * sizeof(char) + 1);
     if (request->url == NULL)
@@ -169,7 +169,7 @@ int parseUrl(char *url, Request *request)
     return !ERROR;
 }
 
-char *http(Request *request)
+char *create_http(Request *request)
 {
     if (request->url == NULL)
     {
@@ -260,17 +260,17 @@ int main(int argc, char *argv[])
         printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
         return EXIT_FAILURE;
     }
-    Request *request = createRequest();
+    Request *request = create_request();
     if (request == NULL)
         return EXIT_FAILURE;
     for (int i = 1; i < argc; i++)
     {
         if (strstr(argv[i], "http://") != NULL)
         {
-            if (parseUrl(argv[i], request) == ERROR)
+            if (parse_url(argv[i], request) == ERROR)
             {
                 message("red", "url parse failed\n");
-                freeRequest(request);
+                free_request(request);
                 return EXIT_FAILURE;
             }
         }
@@ -280,13 +280,13 @@ int main(int argc, char *argv[])
             {
                 message("red", "invalid body argument\n");
                 printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
-                freeRequest(request);
+                free_request(request);
                 return EXIT_FAILURE;
             }
-            if (parseBody(argv[i + 1], request) == ERROR)
+            if (parse_body(argv[i + 1], request) == ERROR)
             {
                 message("red", "body parse failed\n");
-                freeRequest(request);
+                free_request(request);
                 return EXIT_FAILURE;
             }
         }
@@ -296,18 +296,18 @@ int main(int argc, char *argv[])
             {
                 message("red", "invalid body argument\n");
                 printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
-                freeRequest(request);
+                free_request(request);
                 return EXIT_FAILURE;
             }
-            if (parseArguments(&argv[i + 1], request, argc, i) == ERROR)
+            if (parse_arguments(&argv[i + 1], request, argc, i) == ERROR)
             {
                 message("red", "arguments parse failed\n");
-                freeRequest(request);
+                free_request(request);
                 return EXIT_FAILURE;
             }
         }
     }
-    char *posix = http(request);
+    char *posix = create_http(request);
     if (posix != NULL)
     {
         int fd;
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
         if ((fd = make_socket(request)) == ERROR)
         {
             free(posix);
-            freeRequest(request);
+            free_request(request);
             return EXIT_FAILURE;
         }
         write(fd, posix, strlen(posix));
@@ -331,6 +331,6 @@ int main(int argc, char *argv[])
         close(fd);
         free(posix);
     }
-    freeRequest(request);
+    free_request(request);
     return EXIT_SUCCESS;
 }
