@@ -16,7 +16,6 @@ typedef enum
 typedef struct request
 {
     char *url;
-    char *method;
     char *hostName;
     char *port;
     char *path;
@@ -158,18 +157,19 @@ int parseUrl(char *url, Request *request)
     {
         *ptr = '\0';
         request->path = ++ptr;
-        request->length += strlen(request->path);
+        request->length += strlen(request->path) + 1;
     }
     return !ERROR;
 }
 
 char *http(Request *request)
 {
-    if(request->url == NULL)
+    if (request->url == NULL)
     {
         return NULL;
     }
     char *posix = (char *)malloc(request->length * sizeof(char));
+    memset(posix,0,request->length);
     if (posix == NULL)
     {
         printf("Memory allocation error, return ERROR[-1]");
@@ -196,7 +196,7 @@ char *http(Request *request)
     }
     strcat(posix, " HTTP/1.0\r\nHost: ");
     strcat(posix, request->hostName);
-    if(request->port != NULL)
+    if (request->port != NULL)
     {
         strcat(posix, ":");
         strcat(posix, request->port);
@@ -204,7 +204,7 @@ char *http(Request *request)
     if (request->contentLength > 0)
     {
         strcat(posix, "\r\nContent-length:");
-        char buffer[request->contentLength];
+        char buffer[BUFFER];
         sprintf(buffer, "%d", request->contentLength);
         strcat(posix, buffer);
     }
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
     char *posix = http(request);
     if (posix != NULL)
     {
-        message("green", "Parse success, sending this message to the server:\n");
+        message("green", "Parse success, message about to send:\n");
         printf("%s\n", posix);
         free(posix);
     }
