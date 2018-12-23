@@ -20,20 +20,21 @@ typedef enum
 #define BUFFER 50
 #define BUFFER_SIZE 2048
 
+/*Struct to hold all the command line arguments together*/
 typedef struct request
 {
-    char *url;
-    char *hostName;
-    char *port;
-    char *path;
-    char *body;
-    char **arguments;
-    int contentLength;
-    int argumentNum;
-    int length;
+    char *url; //make copy of the url
+    char *hostName; //parse url to host name
+    char *port; //hold port
+    char *path; //hold path
+    char *body; //hold body if -p flag is up
+    char **arguments; //catch all the desired arguments
+    int contentLength; //the body length for the header
+    int argumentNum; //hold the number of the arguments
+    int length; //total length for the header
 } Request;
 
-Request *create_request()
+Request *create_request() //header constructor
 {
     Request *request = (Request *)malloc(sizeof(Request));
     if (request == NULL)
@@ -53,7 +54,7 @@ Request *create_request()
     return request;
 }
 
-void free_request(Request *request)
+void free_request(Request *request) //free heep memory allocation
 {
     if (request->url != NULL)
         free(request->url);
@@ -62,7 +63,7 @@ void free_request(Request *request)
     free(request);
 }
 
-void message(char *color, char *msg)
+void message(char *color, char *msg) //making evrything more beautiful :-)
 {
     if (strcmp(color, "red") == 0)
         printf("\033[0;31mUsage: %s\033[0m", msg);
@@ -72,14 +73,14 @@ void message(char *color, char *msg)
         printf("\033[0;34m%s\033[0m", msg);
 }
 
-bool validation(char *ptr)
+bool validation(char *ptr) //validation function for the parsing
 {
     if (strstr(ptr, "http:") != NULL || strcmp(ptr, "-p") == 0 || strchr(ptr, '=') == NULL)
         return false;
     return true;
 }
 
-int parse_arguments(char **args, Request *request, int argc, int index)
+int parse_arguments(char **args, Request *request, int argc, int index) //parse arguments, if it failed it return ERROR[-1]
 {
     int numOfArguments = atoi(*args);
     if (numOfArguments == 0 || strstr(*args, "http:") != NULL || strcmp(*args, "-p") == 0 || (numOfArguments + index) >= argc - 1)
@@ -120,7 +121,7 @@ int parse_arguments(char **args, Request *request, int argc, int index)
     return !ERROR;
 }
 
-int parse_body(char *body, Request *request)
+int parse_body(char *body, Request *request) //parse body, if it failed it return ERROR[-1]
 {
 
     if (strcmp(body, "-r") == 0 || strstr(body, "http:") != NULL)
@@ -135,7 +136,7 @@ int parse_body(char *body, Request *request)
     return !ERROR;
 }
 
-int parse_url(char *url, Request *request)
+int parse_url(char *url, Request *request) //parse url, if it failed it return ERROR[-1]
 {
     request->url = (char *)malloc(strlen(url) * sizeof(char) + 1);
     if (request->url == NULL)
@@ -169,7 +170,7 @@ int parse_url(char *url, Request *request)
     return !ERROR;
 }
 
-char *create_http(Request *request)
+char *create_http(Request *request) //connecting the http header together, if it failed it return NULL
 {
     if (request->url == NULL)
     {
@@ -179,7 +180,7 @@ char *create_http(Request *request)
     memset(posix, 0, request->length);
     if (posix == NULL)
     {
-        printf("Memory allocation error, return ERROR[-1]");
+        printf("Memory allocation error, return null");
         return NULL;
     }
     if (request->body != NULL)
@@ -221,18 +222,18 @@ char *create_http(Request *request)
     return posix;
 }
 
-int make_socket(Request *request)
+int make_socket(Request *request) //putting the socket up
 {
     struct hostent *hp;
     struct sockaddr_in addr;
     int live = 1, sock;
-    if ((hp = gethostbyname(request->hostName)) == NULL)
+    if ((hp = gethostbyname(request->hostName)) == NULL) //converting host name to ip 
     {
-        perror("gethostbyname");
+        herror("gethostbyname");
         return ERROR;
     }
-    memcpy(&addr.sin_addr, hp->h_addr, hp->h_length);
-    if (request->port != NULL)
+    memcpy(&addr.sin_addr, hp->h_addr, hp->h_length); //coping the host to the struct
+    if (request->port != NULL) //if there is diffrent port then 80
         addr.sin_port = htons(atoi(request->port));
     else
         addr.sin_port = htons(80);
@@ -244,8 +245,10 @@ int make_socket(Request *request)
         perror("setsockopt");
         return ERROR;
     }
+    message("green","connecting...\n");
     if (connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
     {
+        message("red","connect failed\n");
         perror("connect");
         return ERROR;
     }
@@ -265,7 +268,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     for (int i = 1; i < argc; i++)
     {
-        if (strstr(argv[i], "http://") != NULL)
+        if (strstr(argv[i], "http://") != NULL) //identify the url, send it to a parse function
         {
             if (parse_url(argv[i], request) == ERROR)
             {
@@ -274,9 +277,9 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
         }
-        if (strcmp(argv[i], "-p") == 0)
+        if (strcmp(argv[i], "-p") == 0) //identify the body, send it to a parse function
         {
-            if (i == argc - 1)
+            if (i == argc - 1) //check what ever if the flag is at the end of the command
             {
                 message("red", "invalid body argument\n");
                 printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
@@ -290,9 +293,9 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
         }
-        if (strcmp(argv[i], "-r") == 0)
+        if (strcmp(argv[i], "-r") == 0) //identify the arguments, send it to a parse function
         {
-            if (i == argc - 1)
+            if (i == argc - 1) //check what ever if the flag is at the end of the command
             {
                 message("red", "invalid body argument\n");
                 printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
@@ -307,6 +310,7 @@ int main(int argc, char *argv[])
             }
         }
     }
+
     char *posix = create_http(request);
     if (posix != NULL)
     {
@@ -320,6 +324,7 @@ int main(int argc, char *argv[])
             free_request(request);
             return EXIT_FAILURE;
         }
+        printf("connection established! server response: \n\n");
         write(fd, posix, strlen(posix));
         bzero(buffer, BUFFER_SIZE);
         while (read(fd, buffer, BUFFER_SIZE - 1) != 0)
