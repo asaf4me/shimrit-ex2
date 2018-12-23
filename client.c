@@ -18,20 +18,20 @@ typedef enum
 
 #define ERROR -1
 #define BUFFER 50
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE 4096
 
 /*Struct to hold all the command line arguments together*/
 typedef struct request
 {
-    char *url; //make copy of the url
-    char *hostName; //parse url to host name
-    char *port; //hold port
-    char *path; //hold path
-    char *body; //hold body if -p flag is up
-    char **arguments; //catch all the desired arguments
+    char *url;         //make copy of the url
+    char *hostName;    //parse url to host name
+    char *port;        //hold port
+    char *path;        //hold path
+    char *body;        //hold body if -p flag is up
+    char **arguments;  //catch all the desired arguments
     int contentLength; //the body length for the header
-    int argumentNum; //hold the number of the arguments
-    int length; //total length for the header
+    int argumentNum;   //hold the number of the arguments
+    int length;        //total length for the header
 } Request;
 
 Request *create_request() //header constructor
@@ -227,13 +227,13 @@ int make_socket(Request *request) //putting the socket up
     struct hostent *hp;
     struct sockaddr_in addr;
     int live = 1, sock;
-    if ((hp = gethostbyname(request->hostName)) == NULL) //converting host name to ip 
+    if ((hp = gethostbyname(request->hostName)) == NULL) //converting host name to ip
     {
         herror("gethostbyname");
         return ERROR;
     }
     memcpy(&addr.sin_addr, hp->h_addr, hp->h_length); //coping the host to the struct
-    if (request->port != NULL) //if there is diffrent port then 80
+    if (request->port != NULL)                        //if there is diffrent port then 80
         addr.sin_port = htons(atoi(request->port));
     else
         addr.sin_port = htons(80);
@@ -245,10 +245,10 @@ int make_socket(Request *request) //putting the socket up
         perror("setsockopt");
         return ERROR;
     }
-    message("green","connecting...\n");
+    message("green", "connecting...\n");
     if (connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
     {
-        message("red","connect failed\n");
+        message("red", "connect failed\n");
         perror("connect");
         return ERROR;
     }
@@ -312,30 +312,32 @@ int main(int argc, char *argv[])
     }
 
     char *posix = create_http(request);
-    if (posix != NULL)
+    if (posix == NULL)
     {
-        int fd;
-        char buffer[BUFFER_SIZE];
-        message("green", "Parse success, message about to send:\n");
-        printf("%s\n\n", posix);
-        if ((fd = make_socket(request)) == ERROR)
-        {
-            free(posix);
-            free_request(request);
-            return EXIT_FAILURE;
-        }
-        printf("connection established! server response: \n\n");
-        write(fd, posix, strlen(posix));
-        bzero(buffer, BUFFER_SIZE);
-        while (read(fd, buffer, BUFFER_SIZE - 1) != 0)
-        {
-            fprintf(stderr, "%s", buffer);
-            bzero(buffer, BUFFER_SIZE);
-        }
-        shutdown(fd, SHUT_RDWR);
-        close(fd);
-        free(posix);
+        free_request(request);
+        return EXIT_FAILURE;
     }
+    int fd;
+    char buffer[BUFFER_SIZE];
+    message("green", "Parse success, message about to send:\n");
+    printf("%s\n\n", posix);
+    if ((fd = make_socket(request)) == ERROR)
+    {
+        free(posix);
+        free_request(request);
+        return EXIT_FAILURE;
+    }
+    printf("connection established! server response: \n\n");
+    write(fd, posix, strlen(posix));
+    bzero(buffer, BUFFER_SIZE);
+    while (read(fd, buffer, BUFFER_SIZE - 1) != 0)
+    {
+        fprintf(stderr, "%s", buffer);
+        bzero(buffer, BUFFER_SIZE);
+    }
+    shutdown(fd, SHUT_RDWR);
+    close(fd);
+    free(posix);
     free_request(request);
     return EXIT_SUCCESS;
 }
