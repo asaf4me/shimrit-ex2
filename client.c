@@ -349,7 +349,7 @@ int make_socket(Request *request, char *posix) //putting the socket up
         return ERROR;
     }
     message("green", "connection established!\n");
-    int sum = 0;
+    int sum = 0, nbytes = 0;
     while (true)
     {
         int nbytes = write(sock, posix, strlen(posix));
@@ -364,11 +364,13 @@ int make_socket(Request *request, char *posix) //putting the socket up
     }
     sum = 0;
     message("blue", "message sent, server response:\n");
-    while (read(sock, buffer, BUFFER_SIZE - 1) != 0)
+    while ((nbytes = read(sock, buffer, BUFFER_SIZE - 1)) != 0)
     {
+        sum += nbytes;
         fprintf(stderr, "%s", buffer);
         bzero(buffer, BUFFER_SIZE);
     }
+    printf("\nTotal content read: %d\n",sum);
     shutdown(sock, SHUT_RDWR);
     close(sock);
     return !ERROR;
