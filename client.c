@@ -363,7 +363,7 @@ int make_socket(Request *request, char *posix) //putting the socket up
         }
     }
     sum = 0;
-    message("blue", "message sent server response:\n");
+    message("blue", "message sent, server response:\n");
     while (read(sock, buffer, BUFFER_SIZE - 1) != 0)
     {
         fprintf(stderr, "%s", buffer);
