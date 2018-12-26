@@ -428,7 +428,7 @@ int make_socket(Request *request, char *posix) //putting the socket up
             exit(1);
         }
     }
-    printf("\nTotal content read: %d\n", sum);
+    printf("\nTotal received response bytes: %d\n", sum);
     shutdown(sock, SHUT_RDWR);
     close(sock);
     return !ERROR;
