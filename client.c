@@ -367,6 +367,7 @@ int make_socket(Request *request, char *posix) //putting the socket up
     memset(buffer, 0, BUFFER_SIZE);
     if ((hp = gethostbyname(request->hostName)) == NULL) //converting host name to ip
     {
+        message("red", "\n");
         herror("gethostbyname");
         return ERROR;
     }
