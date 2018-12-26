@@ -386,7 +386,7 @@ int make_socket(Request *request, char *posix) //putting the socket up
     message("green", "connecting...\n");
     if (connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
     {
-        message("red", "connect failed\n");
+        message("red", "connectection failed\n");
         perror("connect");
         return ERROR;
     }
@@ -411,6 +411,12 @@ int make_socket(Request *request, char *posix) //putting the socket up
         sum += nbytes;
         fprintf(stderr, "%s", buffer);
         bzero(buffer, BUFFER_SIZE);
+    }
+    if(sum < 0)
+    {
+        message("red","\n");
+        perror("read");
+        exit(1);
     }
     printf("\nTotal content read: %d\n", sum);
     shutdown(sock, SHUT_RDWR);
