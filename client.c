@@ -466,7 +466,6 @@ int main(int argc, char *argv[])
     iterate = make_socket(request, posix);
     if (iterate == ERROR)
     {
-        perror("socket");
         free(posix);
         free_request(request);
         return EXIT_FAILURE;
