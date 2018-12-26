@@ -37,11 +37,7 @@ typedef struct request
 Request *create_request() // header constructor
 {
     Request *request = (Request *)malloc(sizeof(Request));
-    if (request == NULL)
-    {
-        perror("malloc");
-        return NULL;
-    }
+    assert(request != NULL);
     request->url = NULL;
     request->arguments = NULL;
     request->body = NULL;
@@ -370,7 +366,7 @@ int make_socket(Request *request, char *posix) //putting the socket up
         fprintf(stderr, "%s", buffer);
         bzero(buffer, BUFFER_SIZE);
     }
-    printf("\nTotal content read: %d\n",sum);
+    printf("\nTotal content read: %d\n", sum);
     shutdown(sock, SHUT_RDWR);
     close(sock);
     return !ERROR;
