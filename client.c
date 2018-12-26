@@ -215,18 +215,21 @@ int parse_body(int argc, char **argv, Request *request) //parse body, if it fail
     }
 
     index++;
+    request->body = (char *)malloc(strlen(argv[index]) * sizeof(char) + 1);
     for (int i = index; i < argc; i++)
     {
         if (argv[i] != NULL)
         {
-            if (strcmp(argv[i], "-p") == 0)
+            if (i >= index + 1)
             {
-                message("red", "Usage: body already declered\n");
-                return ERROR;
+                if (strcmp(argv[i], "-p") == 0)
+                {
+                    message("red", "Usage: body already declered\n");
+                    return ERROR;
+                }
             }
         }
     }
-    request->body = (char *)malloc(strlen(argv[index]) * sizeof(char) + 1);
     assert(request->body != NULL);
     strcpy(request->body, argv[index]);
     request->body[strlen(argv[index])] = '\0';
