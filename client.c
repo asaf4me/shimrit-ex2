@@ -178,11 +178,6 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
 
 int parse_body(int argc, char **argv, Request *request) //parse body, if it failed it return ERROR[-1]
 {
-    if (request->body != NULL)
-    {
-        message("red", "Usage: body already declered\n");
-        return ERROR;
-    }
     int index = 0;
     for (int i = 0; i < argc; i++)
     {
@@ -202,24 +197,33 @@ int parse_body(int argc, char **argv, Request *request) //parse body, if it fail
         message("red", "Usage: body cant be empty\n");
         return ERROR;
     }
-    request->body = (char *)malloc(strlen(argv[index + 1]) * sizeof(char) + 1);
+    
+    index++;
+    for (int i = index; i < argc; i++)
+    {
+        if (argv[i] != NULL)
+        {
+            if (strcmp(argv[i], "-p") == 0)
+            {
+                message("red", "Usage: body already declered\n");
+                return ERROR;
+            }
+        }
+    }
+    request->body = (char *)malloc(strlen(argv[index]) * sizeof(char) + 1);
     assert(request->body != NULL);
-    strcpy(request->body, argv[index + 1]);
-    request->body[strlen(argv[index + 1])] = '\0';
-    request->contentLength = strlen(argv[index + 1]);
+    strcpy(request->body, argv[index]);
+    request->body[strlen(argv[index])] = '\0';
+    request->contentLength = strlen(argv[index]);
     request->length += request->contentLength;
-    argv[index + 1] = NULL;
+    argv[index] = NULL;
     return !ERROR;
 }
 
 int parse_url(int argc, char **argv, Request *request) //parse url, if it failed it return ERROR[-1]
 {
-    if (request->url != NULL)
-    {
-        message("red", "Usage: url already declered\n");
-        return ERROR;
-    }
     char *url = NULL;
+    int index = 0;
     for (int i = 0; i < argc; i++)
     {
         if (argv[i] != NULL)
@@ -227,15 +231,34 @@ int parse_url(int argc, char **argv, Request *request) //parse url, if it failed
             if (strstr(argv[i], "http://") != NULL)
             {
                 url = argv[i];
+                index = i;
                 break;
             }
         }
     }
+    index++;
+    for (int i = index; i < argc; i++)
+    {
+        if (argv[i] != NULL)
+        {
+            if (strcmp(argv[i - 1], "-p") != 0)
+            {
+                if (strstr(argv[i], "http://") != NULL && url != NULL)
+                {
+                    printf("index is %d\n", index);
+                    message("red", "Usage: url already declered\n");
+                    return ERROR;
+                }
+            }
+        }
+    }
+
     if (url == NULL)
     {
         message("red", "Usage: url not declered\n");
         return ERROR;
     }
+
     request->url = (char *)malloc(strlen(url) * sizeof(char) + 1);
     strcpy(request->url, url);
     request->url[strlen(url)] = '\0';
