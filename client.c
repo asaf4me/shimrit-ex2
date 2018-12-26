@@ -197,7 +197,7 @@ int parse_body(int argc, char **argv, Request *request) //parse body, if it fail
         message("red", "Usage: body cant be empty\n");
         return ERROR;
     }
-    
+
     index++;
     for (int i = index; i < argc; i++)
     {
@@ -241,14 +241,21 @@ int parse_url(int argc, char **argv, Request *request) //parse url, if it failed
     {
         if (argv[i] != NULL)
         {
-            if (strcmp(argv[i - 1], "-p") != 0)
+            if (argv[i - 1] != NULL)
             {
-                if (strstr(argv[i], "http://") != NULL && url != NULL)
+                if (strcmp(argv[i - 1], "-p") != 0)
                 {
-                    printf("index is %d\n", index);
-                    message("red", "Usage: url already declered\n");
-                    return ERROR;
+                    if (strstr(argv[i], "http://") != NULL && url != NULL)
+                    {
+                        message("red", "Usage: url already declered\n");
+                        return ERROR;
+                    }
                 }
+            }
+            if (strstr(argv[i], "http://") != NULL && url != NULL)
+            {
+                message("red", "Usage: url already declered\n");
+                return ERROR;
             }
         }
     }
