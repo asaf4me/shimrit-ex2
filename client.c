@@ -384,21 +384,21 @@ int main(int argc, char *argv[])
     int iterate = parse_body(argc, argv, request);
     if (iterate == ERROR)
     {
-        message("red", "Usage: body parse failed\n");
+        message("red", "body parse failed\n");
         free_request(request);
         return EXIT_FAILURE;
     }
     iterate = parse_arguments(argc, argv, request);
     if (iterate == ERROR)
     {
-        message("red", "Usage: arguments parse failed\n");
+        message("red", "arguments parse failed\n");
         free_request(request);
         return EXIT_FAILURE;
     }
     iterate = parse_url(argc, argv, request);
     if (iterate == ERROR)
     {
-        message("red", "Usage: url parse failed\n");
+        message("red", "url parse failed\n");
         free_request(request);
         return EXIT_FAILURE;
     }
