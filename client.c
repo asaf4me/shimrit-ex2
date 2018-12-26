@@ -104,11 +104,6 @@ void debug(Request *request)
 
 int parse_arguments(int argc, char **argv, Request *request) //parse arguments, if it failed it return ERROR[-1]
 {
-    if (request->arguments != NULL)
-    {
-        message("red", "Usage: arguments already declered\n");
-        return ERROR;
-    }
     int index = 0, argumentsIndex = 0, counter = 0;
     for (int i = 0; i < argc; i++)
     {
@@ -138,6 +133,28 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
     request->argumentNum = numOfArguments;
     request->arguments = (char **)malloc(numOfArguments * sizeof(char *));
     assert(request->arguments != NULL);
+    for (int i = index + 1; i < argc; i++)
+    {
+        if (argv[i] != NULL)
+        {
+            if (argv[i - 1] != NULL)
+            {
+                if (strcmp(argv[i - 1], "-p") != 0)
+                {
+                    if (strcmp(argv[i], "-r") == 0)
+                    {
+                        message("red", "Usage: arguments already declered\n");
+                        return ERROR;
+                    }
+                }
+            }
+            if (strcmp(argv[i], "-r") == 0 && request->arguments != NULL)
+            {
+                message("red", "Usage: arguments already declered\n");
+                return ERROR;
+            }
+        }
+    }
     for (int i = index; i <= index + numOfArguments; i++)
     {
         if (argv[i] != NULL)
@@ -154,13 +171,13 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
     index = index + numOfArguments + 1;
     for (int i = index; i < argc; i++)
     {
-        if (argv[i] != NULL && index < argc - 1)
+        if (argv[i] != NULL)
         {
             if (strcmp(argv[i], "-p") != 0 && strstr(argv[i], "http://") == NULL)
                 return ERROR;
+            else if (validation(argv[i]) == true)
+                counter++;
         }
-        else if (validation(argv[i]) == true)
-            counter++;
     }
     if (counter != numOfArguments)
     {
@@ -172,7 +189,6 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
         message("red", "Usage: not enough arguments\n");
         return ERROR;
     }
-
     return !ERROR;
 }
 
