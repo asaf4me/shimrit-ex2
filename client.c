@@ -253,6 +253,7 @@ int parse_url(int argc, char **argv, Request *request) //parse url, if it failed
         }
     }
     index++;
+
     for (int i = index; i < argc; i++)
     {
         if (argv[i] != NULL)
@@ -271,6 +272,11 @@ int parse_url(int argc, char **argv, Request *request) //parse url, if it failed
             if (strstr(argv[i], "http://") != NULL && url != NULL)
             {
                 message("red", "Usage: url already declered\n");
+                return ERROR;
+            }
+            else if (strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-r") != 0 && request->arguments == NULL && request->body == NULL)
+            {
+                message("red", "Usage: unrecognized flag\n");
                 return ERROR;
             }
         }
@@ -412,12 +418,12 @@ int make_socket(Request *request, char *posix) //putting the socket up
         sum += nbytes;
         fprintf(stderr, "%s", buffer);
         bzero(buffer, BUFFER_SIZE);
-    }
-    if(sum < 0)
-    {
-        message("red","\n");
-        perror("read");
-        exit(1);
+        if (sum <= 0)
+        {
+            message("red", "\n");
+            perror("read");
+            exit(1);
+        }
     }
     printf("\nTotal content read: %d\n", sum);
     shutdown(sock, SHUT_RDWR);
