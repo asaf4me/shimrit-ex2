@@ -55,7 +55,15 @@ void free_request(Request *request) // free heep memory allocation
     if (request->url != NULL)
         free(request->url);
     if (request->arguments != NULL)
+    {
+        for (int i = 0; i < request->argumentNum; i++)
+        {
+            if (request->arguments[i] != NULL)
+                free(request->arguments[i]);
+        }
         free(request->arguments);
+    }
+
     if (request->body != NULL)
         free(request->body);
     free(request);
@@ -80,6 +88,19 @@ bool validation(char *ptr) //validation function for the parsing
 {
     if (strchr(ptr, '=') == NULL || ptr[0] == '=' || ptr[strlen(ptr) - 1] == '=')
         return false;
+    return true;
+}
+
+bool argv_validation(int argc, char **argv) //validation function for the parsing
+{
+    for (int i = 1; i < argc; i++)
+    {
+        if (argv[i] != NULL)
+        {
+            if (strcmp(argv[i], "-r") != 0 && strcmp(argv[i], "-p") != 0 && strstr(argv[i], "http://") == NULL)
+                return false;
+        }
+    }
     return true;
 }
 
@@ -136,8 +157,10 @@ int parse_arguments(int argc, char **argv, Request *request)
         usage_message();
         return ERROR;
     }
+    argv[index] = NULL;
     request->argumentNum = numOfArguments;
     request->arguments = (char **)malloc(numOfArguments * sizeof(char *));
+    memset(request->arguments, 0, numOfArguments * sizeof(char *));
     assert(request->arguments != NULL);
     for (int i = index + 1; i < argc; i++)
     {
@@ -167,10 +190,15 @@ int parse_arguments(int argc, char **argv, Request *request)
         {
             if (validation(argv[i]) == true)
             {
-                request->arguments[argumentsIndex] = argv[i];
+                request->arguments[argumentsIndex] = (char *)malloc(strlen(argv[i]) * sizeof(char) + 1);
+                assert(request->arguments[argumentsIndex] != NULL);
+                memset(request->arguments[argumentsIndex], 0, strlen(argv[i]));
+                request->arguments[argumentsIndex][strlen(argv[i])] = '\0';
+                strcpy(request->arguments[argumentsIndex], argv[i]);
                 argumentsIndex++;
                 counter++;
                 request->length += strlen(argv[i]) + 1;
+                argv[i] = NULL;
             }
         }
     }
@@ -202,7 +230,7 @@ int parse_arguments(int argc, char **argv, Request *request)
 }
 
 /*parse body, if it failed it return ERROR[-1]*/
-int parse_body(int argc, char **argv, Request *request) 
+int parse_body(int argc, char **argv, Request *request)
 {
     int index = 0;
     for (int i = 0; i < argc; i++) // searching for the -p flag
@@ -250,7 +278,7 @@ int parse_body(int argc, char **argv, Request *request)
 }
 
 /*parse url, if it failed it return ERROR[-1]*/
-int parse_url(int argc, char **argv, Request *request) 
+int parse_url(int argc, char **argv, Request *request)
 {
     char *url = NULL;
     int index = 0;
@@ -330,7 +358,7 @@ int parse_url(int argc, char **argv, Request *request)
 }
 
 /*connecting the http header together, if it failed it return NULL*/
-char *create_http(Request *request) 
+char *create_http(Request *request)
 {
     char *posix = (char *)malloc(request->length * sizeof(char));
     assert(posix != NULL);
@@ -380,7 +408,7 @@ char *create_http(Request *request)
 }
 
 /*putting the socket up, return ERROR on failure*/
-int make_socket(Request *request, char *posix) 
+int make_socket(Request *request, char *posix)
 {
     struct hostent *hp;
     struct sockaddr_in addr;
@@ -457,6 +485,7 @@ int main(int argc, char *argv[])
         free_request(request);
         return EXIT_FAILURE;
     }
+
     iterate = parse_arguments(argc, argv, request);
     if (iterate == ERROR)
     {
@@ -464,10 +493,18 @@ int main(int argc, char *argv[])
         free_request(request);
         return EXIT_FAILURE;
     }
+
     iterate = parse_url(argc, argv, request);
     if (iterate == ERROR)
     {
         printf(" : url parse failed\n");
+        free_request(request);
+        return EXIT_FAILURE;
+    }
+
+    if (argv_validation(argc, argv) == false)
+    {
+        usage_message();
         free_request(request);
         return EXIT_FAILURE;
     }
