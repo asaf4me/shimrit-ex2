@@ -98,7 +98,10 @@ bool argv_validation(int argc, char **argv) //validation function for the parsin
         if (argv[i] != NULL)
         {
             if (strcmp(argv[i], "-r") != 0 && strcmp(argv[i], "-p") != 0 && strstr(argv[i], "http://") == NULL)
+            {
+                usage_message();
                 return false;
+            }
         }
     }
     return true;
@@ -504,7 +507,7 @@ int main(int argc, char *argv[])
 
     if (argv_validation(argc, argv) == false)
     {
-        usage_message();
+        printf(" : invalid command line input\n");
         free_request(request);
         return EXIT_FAILURE;
     }
