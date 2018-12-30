@@ -517,7 +517,7 @@ int main(int argc, char *argv[])
         free_request(request);
         return EXIT_FAILURE;
     }
-    printf("Parse success, message about to send:\n");
+    printf("Request:\n");
     printf("%s\n", posix);
     iterate = make_socket(request, posix);
     if (iterate == ERROR)
