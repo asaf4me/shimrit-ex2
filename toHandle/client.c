@@ -451,7 +451,7 @@ int make_socket(Request *request, char *posix)
         if (nbytes < 0)
         {
             perror("write");
-            exit(1);
+            return ERROR;
         }
     }
     sum = 0;
@@ -463,7 +463,7 @@ int make_socket(Request *request, char *posix)
         if (sum <= 0)
         {
             perror("read");
-            exit(1);
+            return ERROR;
         }
     }
     printf("\nTotal received response bytes: %d\n", sum);
