@@ -55,7 +55,15 @@ void free_request(Request *request) // free heep memory allocation
     if (request->url != NULL)
         free(request->url);
     if (request->arguments != NULL)
+    {
+        for (int i = 0; i < request->argumentNum; i++)
+        {
+            if (request->arguments[i] != NULL)
+                free(request->arguments[i]);
+        }
         free(request->arguments);
+    }
+
     if (request->body != NULL)
         free(request->body);
     free(request);
@@ -71,6 +79,11 @@ void message(char *color, char *msg) // colored printf
         printf("\033[0;34m%s\033[0m", msg);
 }
 
+void usage_message() //Print out the required input
+{
+    printf("Usage: client [-p] [-r n <pr1=value1 pr2=value2 ...>] <URL>");
+}
+
 bool validation(char *ptr) //validation function for the parsing
 {
     if (strchr(ptr, '=') == NULL || ptr[0] == '=' || ptr[strlen(ptr) - 1] == '=')
@@ -78,7 +91,23 @@ bool validation(char *ptr) //validation function for the parsing
     return true;
 }
 
-void debug(Request *request)
+bool argv_validation(int argc, char **argv) //validation function for the parsing
+{
+    for (int i = 1; i < argc; i++)
+    {
+        if (argv[i] != NULL)
+        {
+            if (strcmp(argv[i], "-r") != 0 && strcmp(argv[i], "-p") != 0 && strstr(argv[i], "http://") == NULL)
+            {
+                usage_message();
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void debug(Request *request) //used for debugging
 {
     if (request->url != NULL)
         printf("Url is: %s\n", request->url);
@@ -102,10 +131,11 @@ void debug(Request *request)
     }
 }
 
-int parse_arguments(int argc, char **argv, Request *request) //parse arguments, if it failed it return ERROR[-1]
+/*parsing the arguments given after the -r flag, it will return ERROR[-1] if it failed*/
+int parse_arguments(int argc, char **argv, Request *request)
 {
     int index = 0, argumentsIndex = 0, counter = 0;
-    for (int i = 0; i < argc; i++)
+    for (int i = 0; i < argc; i++) // searching for the -r flag
     {
         if (argv[i] != NULL)
         {
@@ -120,18 +150,25 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
         return !ERROR;
     if (index == argc - 1 && strcmp(argv[index], "-r") == 0)
     {
-        message("red", "Usage: aruments cant be empty\n");
+        usage_message();
         return ERROR;
     }
     index++;
+    if(strcmp(argv[index], "0") == 0)
+    {
+        argv[index] = NULL;
+        return !ERROR;
+    }
     int numOfArguments = atoi(argv[index]);
     if (numOfArguments == 0)
     {
-        message("red", "Usage: after argument flag a number of arguments must be declered\n");
+        usage_message();
         return ERROR;
     }
+    argv[index] = NULL;
     request->argumentNum = numOfArguments;
     request->arguments = (char **)malloc(numOfArguments * sizeof(char *));
+    memset(request->arguments, 0, numOfArguments * sizeof(char *));
     assert(request->arguments != NULL);
     for (int i = index + 1; i < argc; i++)
     {
@@ -143,14 +180,14 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
                 {
                     if (strcmp(argv[i], "-r") == 0)
                     {
-                        message("red", "Usage: arguments already declered\n");
+                        usage_message();
                         return ERROR;
                     }
                 }
             }
             if (strcmp(argv[i], "-r") == 0 && request->arguments != NULL)
             {
-                message("red", "Usage: arguments already declered\n");
+                usage_message();
                 return ERROR;
             }
         }
@@ -161,10 +198,15 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
         {
             if (validation(argv[i]) == true)
             {
-                request->arguments[argumentsIndex] = argv[i];
+                request->arguments[argumentsIndex] = (char *)malloc(strlen(argv[i]) * sizeof(char) + 1);
+                assert(request->arguments[argumentsIndex] != NULL);
+                memset(request->arguments[argumentsIndex], 0, strlen(argv[i]));
+                request->arguments[argumentsIndex][strlen(argv[i])] = '\0';
+                strcpy(request->arguments[argumentsIndex], argv[i]);
                 argumentsIndex++;
                 counter++;
                 request->length += strlen(argv[i]) + 1;
+                argv[i] = NULL;
             }
         }
     }
@@ -174,7 +216,10 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
         if (argv[i] != NULL)
         {
             if (strcmp(argv[i], "-p") != 0 && strstr(argv[i], "http://") == NULL)
+            {
+                usage_message();
                 return ERROR;
+            }
             else if (validation(argv[i]) == true)
                 counter++;
         }
@@ -183,19 +228,20 @@ int parse_arguments(int argc, char **argv, Request *request) //parse arguments, 
     {
         if (counter > numOfArguments)
         {
-            message("red", "Usage: too many arguments\n");
+            usage_message();
             return ERROR;
         }
-        message("red", "Usage: not enough arguments\n");
+        usage_message();
         return ERROR;
     }
     return !ERROR;
 }
 
-int parse_body(int argc, char **argv, Request *request) //parse body, if it failed it return ERROR[-1]
+/*parse body, if it failed it return ERROR[-1]*/
+int parse_body(int argc, char **argv, Request *request)
 {
     int index = 0;
-    for (int i = 0; i < argc; i++)
+    for (int i = 0; i < argc; i++) // searching for the -p flag
     {
         if (argv[i] != NULL)
         {
@@ -210,7 +256,7 @@ int parse_body(int argc, char **argv, Request *request) //parse body, if it fail
         return !ERROR;
     if (index == argc - 1 && strcmp(argv[index], "-p") == 0)
     {
-        message("red", "Usage: body cant be empty\n");
+        usage_message();
         return ERROR;
     }
 
@@ -224,7 +270,7 @@ int parse_body(int argc, char **argv, Request *request) //parse body, if it fail
             {
                 if (strcmp(argv[i], "-p") == 0)
                 {
-                    message("red", "Usage: body already declered\n");
+                    usage_message();
                     return ERROR;
                 }
             }
@@ -239,11 +285,12 @@ int parse_body(int argc, char **argv, Request *request) //parse body, if it fail
     return !ERROR;
 }
 
-int parse_url(int argc, char **argv, Request *request) //parse url, if it failed it return ERROR[-1]
+/*parse url, if it failed it return ERROR[-1]*/
+int parse_url(int argc, char **argv, Request *request)
 {
     char *url = NULL;
     int index = 0;
-    for (int i = 0; i < argc; i++)
+    for (int i = 0; i < argc; i++) // searching the URL
     {
         if (argv[i] != NULL)
         {
@@ -267,19 +314,19 @@ int parse_url(int argc, char **argv, Request *request) //parse url, if it failed
                 {
                     if (strstr(argv[i], "http://") != NULL && url != NULL)
                     {
-                        message("red", "Usage: url already declered\n");
+                        usage_message();
                         return ERROR;
                     }
                 }
             }
             if (strstr(argv[i], "http://") != NULL && url != NULL)
             {
-                message("red", "Usage: url already declered\n");
+                usage_message();
                 return ERROR;
             }
             else if (strcmp(argv[i], "-p") != 0 && strcmp(argv[i], "-r") != 0 && request->arguments == NULL && request->body == NULL)
             {
-                message("red", "Usage: unrecognized flag\n");
+                usage_message();
                 return ERROR;
             }
         }
@@ -287,7 +334,7 @@ int parse_url(int argc, char **argv, Request *request) //parse url, if it failed
 
     if (url == NULL)
     {
-        message("red", "Usage: url not declered\n");
+        usage_message();
         return ERROR;
     }
 
@@ -318,7 +365,8 @@ int parse_url(int argc, char **argv, Request *request) //parse url, if it failed
     return !ERROR;
 }
 
-char *create_http(Request *request) //connecting the http header together, if it failed it return NULL
+/*connecting the http header together, if it failed it return NULL*/
+char *create_http(Request *request)
 {
     char *posix = (char *)malloc(request->length * sizeof(char));
     assert(posix != NULL);
@@ -367,7 +415,8 @@ char *create_http(Request *request) //connecting the http header together, if it
     return posix;
 }
 
-int make_socket(Request *request, char *posix) //putting the socket up
+/*putting the socket up, return ERROR on failure*/
+int make_socket(Request *request, char *posix)
 {
     struct hostent *hp;
     struct sockaddr_in addr;
@@ -376,7 +425,6 @@ int make_socket(Request *request, char *posix) //putting the socket up
     memset(buffer, 0, BUFFER_SIZE);
     if ((hp = gethostbyname(request->hostName)) == NULL) //converting host name to ip
     {
-        message("red", "\n");
         herror("gethostbyname");
         return ERROR;
     }
@@ -393,14 +441,11 @@ int make_socket(Request *request, char *posix) //putting the socket up
         perror("setsockopt");
         return ERROR;
     }
-    message("green", "connecting...\n");
     if (connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
     {
-        message("red", "connectection failed\n");
         perror("connect");
         return ERROR;
     }
-    message("green", "connection established!\n");
     int sum = 0, nbytes = 0;
     while (true)
     {
@@ -411,11 +456,10 @@ int make_socket(Request *request, char *posix) //putting the socket up
         if (nbytes < 0)
         {
             perror("write");
-            exit(1);
+            return ERROR;
         }
     }
     sum = 0;
-    message("blue", "message sent, server response:\n");
     while ((nbytes = read(sock, buffer, BUFFER_SIZE - 1)) != 0)
     {
         sum += nbytes;
@@ -423,9 +467,8 @@ int make_socket(Request *request, char *posix) //putting the socket up
         bzero(buffer, BUFFER_SIZE);
         if (sum <= 0)
         {
-            message("red", "\n");
             perror("read");
-            exit(1);
+            return ERROR;
         }
     }
     printf("\nTotal received response bytes: %d\n", sum);
@@ -438,29 +481,33 @@ int main(int argc, char *argv[])
 {
     if (argc == 1)
     {
-        message("red", "Usage: invalid command line arguments\n");
-        printf("Example for correct input:\n./client -r <num> x=1 x=2 -p hello http://www.google.com\n");
+        usage_message();
         return EXIT_FAILURE;
     }
     Request *request = create_request();
     int iterate = parse_body(argc, argv, request);
     if (iterate == ERROR)
     {
-        message("red", "body parse failed\n");
         free_request(request);
         return EXIT_FAILURE;
     }
+
     iterate = parse_arguments(argc, argv, request);
     if (iterate == ERROR)
     {
-        message("red", "arguments parse failed\n");
         free_request(request);
         return EXIT_FAILURE;
     }
+
     iterate = parse_url(argc, argv, request);
     if (iterate == ERROR)
     {
-        message("red", "url parse failed\n");
+        free_request(request);
+        return EXIT_FAILURE;
+    }
+
+    if (argv_validation(argc, argv) == false)
+    {
         free_request(request);
         return EXIT_FAILURE;
     }
@@ -470,7 +517,7 @@ int main(int argc, char *argv[])
         free_request(request);
         return EXIT_FAILURE;
     }
-    message("green", "Parse success, message about to send:\n");
+    printf("Request:\n");
     printf("%s\n", posix);
     iterate = make_socket(request, posix);
     if (iterate == ERROR)
