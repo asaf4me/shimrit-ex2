@@ -100,10 +100,15 @@ bool argv_validation(int argc, char **argv) //validation function for the parsin
 
 bool is_digit(char *check)
 {
-    for(int i = 0; i < strlen(check) ; i++)
+    for (int i = 0; i < strlen(check); i++)
     {
-        if(check[i] < '0' || check[i] > '9')
-            return false;
+        if (check[i] != '/')
+        {
+            if (check[i] < '0' || check[i] > '9')
+                return false;
+        }
+        else if(check[i] == '/')
+            break;
     }
     return true;
 }
@@ -131,13 +136,13 @@ int parse_arguments(int argc, char **argv, Request *request)
         return ERROR;
     }
     index++;
-    if(strcmp(argv[index], "0") == 0)// determine if the number of arguments is identical 0
+    if (strcmp(argv[index], "0") == 0) // determine if the number of arguments is identical 0
     {
         argv[index] = NULL;
         return !ERROR;
     }
     int numOfArguments = atoi(argv[index]);
-    if (numOfArguments == 0 || is_digit(argv[index]) == false)// determine if the number of arguments is a number
+    if (numOfArguments == 0 || is_digit(argv[index]) == false) // determine if the number of arguments is a number
     {
         usage_message();
         return ERROR;
@@ -169,8 +174,8 @@ int parse_arguments(int argc, char **argv, Request *request)
             }
         }
     }
-    if(index + numOfArguments >= argc)// determine if the number of arguments is larger then the argv length
-    {                  
+    if (index + numOfArguments >= argc) // determine if the number of arguments is larger then the argv length
+    {
         usage_message();
         return ERROR;
     }
@@ -329,7 +334,8 @@ int parse_url(int argc, char **argv, Request *request)
     if (ptr != NULL)
     {
         *ptr = '\0';
-        if(*(++ptr) == '\0' || is_digit(ptr) == false)
+        ++ptr;
+        if (*ptr == '\0' || *ptr == '/' || is_digit(ptr) == false)
         {
             usage_message();
             return ERROR;
