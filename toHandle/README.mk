@@ -1,12 +1,12 @@
 EX2 - implemention of http server request
-<u>Author details</u> - name : asaf jospeh , id : 203819065
-<u>Files</u> - client.c
+Author details - name : asaf jospeh , id : 203819065
+Files - client.c
 
-<u>compile</u> with : gcc -Wall client.c -o client -g
+compile with : gcc -Wall client.c -o client -g
 
-<u>valgrind with</u> :  valgrind --track-origins=yes --tool=memcheck --leak-check=full -v
+valgrind with :  valgrind --track-origins=yes --tool=memcheck --leak-check=full -v
 
-<u>Description</u> : in this exercise we have implemented an HTTP header request using sockets.
+Description : in this exercise we have implemented an HTTP header request using sockets.
 
 we parsed the command line command :
 
