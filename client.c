@@ -19,6 +19,7 @@ typedef enum
 #define ERROR -1
 #define BUFFER 50
 #define BUFFER_SIZE 1024
+#define h_addr h_addr_list[0]
 
 /*Struct to hold all the command line arguments together*/
 typedef struct request
@@ -69,19 +70,9 @@ void free_request(Request *request) // free heep memory allocation
     free(request);
 }
 
-void message(char *color, char *msg) // colored printf
-{
-    if (strcmp(color, "red") == 0)
-        printf("\033[0;31m%s\033[0m", msg);
-    else if (strcmp(color, "green") == 0)
-        printf("\033[0;32m%s\033[0m", msg);
-    else if (strcmp(color, "blue") == 0)
-        printf("\033[0;34m%s\033[0m", msg);
-}
-
 void usage_message() //Print out the required input
 {
-    printf("Usage: client [-p] [-r n <pr1=value1 pr2=value2 ...>] <URL>");
+    printf("Usage: client [-p] [-r n <pr1=value1 pr2=value2 ...>] <URL>\n");
 }
 
 bool validation(char *ptr) //validation function for the parsing
@@ -107,28 +98,19 @@ bool argv_validation(int argc, char **argv) //validation function for the parsin
     return true;
 }
 
-void debug(Request *request) //used for debugging
+bool is_digit(char *check)
 {
-    if (request->url != NULL)
-        printf("Url is: %s\n", request->url);
-    if (request->body != NULL)
-        printf("Body is: %s\n", request->body);
-    if (request->hostName != NULL)
-        printf("Host name is: %s\n", request->hostName);
-    if (request->path != NULL)
-        printf("Path is: %s\n", request->path);
-    if (request->port != NULL)
-        printf("Port is: %s\n", request->port);
-    if (request->arguments != NULL)
+    for (int i = 0; i < strlen(check); i++)
     {
-        printf("Arguments are: ");
-        for (int i = 0; i < request->argumentNum; i++)
+        if (check[i] != '/')
         {
-            if (request->arguments[i] != NULL)
-                printf("%s ,", request->arguments[i]);
+            if (check[i] < '0' || check[i] > '9')
+                return false;
         }
-        printf("\n");
+        else if(check[i] == '/')
+            break;
     }
+    return true;
 }
 
 /*parsing the arguments given after the -r flag, it will return ERROR[-1] if it failed*/
@@ -154,13 +136,13 @@ int parse_arguments(int argc, char **argv, Request *request)
         return ERROR;
     }
     index++;
-    if(strcmp(argv[index], "0") == 0)
+    if (strcmp(argv[index], "0") == 0) // determine if the number of arguments is identical 0
     {
         argv[index] = NULL;
         return !ERROR;
     }
     int numOfArguments = atoi(argv[index]);
-    if (numOfArguments == 0)
+    if (numOfArguments == 0 || is_digit(argv[index]) == false) // determine if the number of arguments is a number
     {
         usage_message();
         return ERROR;
@@ -191,6 +173,11 @@ int parse_arguments(int argc, char **argv, Request *request)
                 return ERROR;
             }
         }
+    }
+    if (index + numOfArguments >= argc) // determine if the number of arguments is larger then the argv length
+    {
+        usage_message();
+        return ERROR;
     }
     for (int i = index; i <= index + numOfArguments; i++)
     {
@@ -337,7 +324,6 @@ int parse_url(int argc, char **argv, Request *request)
         usage_message();
         return ERROR;
     }
-
     request->url = (char *)malloc(strlen(url) * sizeof(char) + 1);
     strcpy(request->url, url);
     request->url[strlen(url)] = '\0';
@@ -348,7 +334,13 @@ int parse_url(int argc, char **argv, Request *request)
     if (ptr != NULL)
     {
         *ptr = '\0';
-        request->port = ++ptr;
+        ++ptr;
+        if (*ptr == '\0' || *ptr == '/' || is_digit(ptr) == false)
+        {
+            usage_message();
+            return ERROR;
+        }
+        request->port = ptr;
         request->length += strlen(request->port) + 1;
     }
     else
