@@ -1,6 +1,6 @@
 # shimrit-ex2
 
-**EX2 - implemention of http server request **
+EX2 - implemention of http server request 
 <u>Author details</u> - name : asaf jospeh , id : 203819065
 <u>Files</u> - client.c
 
