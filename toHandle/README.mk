@@ -1,4 +1,4 @@
-EX2 - implemention of http server request
+EX2 - implementation of http server request
 Author details - name : asaf jospeh , id : 203819065
 Files - client.c
 
